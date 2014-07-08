@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# lalalal
+
 ###########################
 #  Developer: Tomer Iluz  #
 ###########################
