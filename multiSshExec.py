@@ -385,7 +385,7 @@ group4.add_option("-O",
         metavar="<OUTFILE>", dest="outfile",
         type='string',
         default='outfile.log',
-        help="Output file (default: %default)")
+        #help="Output file (default: %default)")
 group4.add_option("-E",
         metavar="<ERRFILE>", dest="errfile",
         type='string',
