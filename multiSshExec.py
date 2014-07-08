@@ -372,7 +372,7 @@ group3.add_option("-L",
 	dest="linuxver",
         action="append",
         default='all',
-        ##choices=['4', '5', '6', 'none', 'all'],
+        choices=['4', '5', '6', 'none', 'all'],
         help="RHEL version to execute commands on (default: %default)")
 group3.add_option("-X",
 	action='store_true',
