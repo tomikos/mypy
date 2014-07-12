@@ -9,6 +9,7 @@ from sys import argv, stdout
 from time import sleep, time
 from threading import Thread
 from optparse import OptionParser, OptionGroup
+from optparse import Option, OptionValueError
 from Queue import Queue
 
 try:
@@ -72,42 +73,41 @@ def postscript():
 			myprint('\nUnable to execute post script \'%s\'' % opts.post)
 def platform(opts):
 
-	# 'none' is stronger than 'all' or versions
-	if ('none' in opts.linuxver):
-		opts.linuxver = 'none'
-
-	# 'all' is stornger than versions
-	if ('all' in opts.linuxver):
-		opts.linuxver = 'all'
+	# 'No Linux' is stronger than 'linux versions'
+	if (not opts.linux):
+		opts.linuxver = False
+	# 'linux versions' is stornger than 'All linux'
+	elif (opts.linuxver):
+		opts.linux = False
 
 	# No Linux and no HPUX
-	if (opts.linuxver == 'none') and (opts.nohpux):
-		myprint('\nNo paltaform choosed to ruuning on')
+	if (not opts.linux) and (not opts.linuxver) and (not opts.hpux):
+		myprint('\nNo paltform choosed to ruuning on')
 		os._exit(0)
 
 	# Only HPUX 
-	if (opts.linuxver == 'none') and (not opts.nohpux):
+	if not (opts.linuxver and opts.linux) and (opts.hpux):
 		palatcheck='''KIND=`uname`
 		if [ "$KIND" != 'HPUX' ]; then exit 0; fi
 		'''
 		return palatcheck
 	
 	# Only all Linux
-	if (opts.linuxver == 'all') and (opts.nohpux):
+	if (opts.linux) and (not opts.hpux):
 		palatcheck='''KIND=`uname`
 		if [ "$KIND" != 'Linux' ]; then exit 0; fi
 		'''
 		return palatcheck
 
 	# All Linux and HPUX
-	if (opts.linuxver == 'all') and (not opts.nohpux):
+	if (opts.linux and opts.hpux):
 		palatcheck='''KIND=`uname`
 		if [ "$KIND" != 'Linux' -o "$KIND" != 'HPUX' ]; then exit 0; fi
 		'''
 		return palatcheck
 
 	# Only versions of Linux
-	if (opts.linuxver) and (opts.nohpux):
+	if (opts.linuxver) and (not opts.hpux):
 		palatcheck='''KIND=`uname`
 		if [ "$KIND" != 'Linux' ]; then exit 0; fi
 		if [ ! -s "/etc/redhat-release" ]; then  exit 0; fi
@@ -115,21 +115,26 @@ def platform(opts):
 		VER=`cat /etc/redhat-release | awk '{print $3}' | cut -f1 -d'.' 2>/dev/null`
 		if [[ ! `echo "$linuxver" | grep "$VER"` ]]; then exit 0; fi
 		''' % opts.linuxver
+		return palatcheck
 
 	# Versions of Linux and HPUX
-	if (opts.linuxver) and (not opts.nohpux):
+	if (opts.linuxver) and (opts.hpux):
 		palatcheck='''KIND=`uname`
-		if [ "$KIND" != 'Linux' -o "$KIND" != 'HPUX']; then exit 0; fi
+		if [ "$KIND" != 'Linux' -a "$KIND" != 'HPUX' ]; then exit 0; fi
 		if [ "$KIND" = 'Linux' ]; then
 			if [ ! -s "/etc/redhat-release" ]; then  exit 0; fi
-			linuxver=%s
-			VER=`cat /etc/redhat-release | awk '{print $3}' | cut -f1 -d'.' 2>/dev/null`
-			if [[ ! `echo "$linuxver" | grep "$VER"` ]]; then exit 0; fi
+			linuxver="%s"
+			VER=`cat /etc/redhat-release | grep -o '[0-9]' | head -1 2>/dev/null`
+			if ! echo "$linuxver" | grep "'$VER'" &>/dev/null ; then exit 0; fi
 		fi
 		''' % opts.linuxver
+		return palatcheck
 
 # Using for singel hostname
 def singelTarget(opts):
+
+	# Determine chosen platform
+	opts.platcheck = platform(opts)
 
 	# Reset needed variables
 	results = []
@@ -168,6 +173,7 @@ def singelTarget(opts):
 # Using for hostlist file
 def multiTarget(opts):
 
+	# Check hostfile for reading
 	checkfile(opts.hostfile, 'r')
 
 	# Determine number of supplied hosts
@@ -178,6 +184,9 @@ def multiTarget(opts):
 		myprint('\nThe hostfile: \'%s\' is empty!' % opts.hostfile)
 		exit(1)
 
+	# Determine chosen platform
+	opts.platcheck = platform(opts)
+
 	# Redefine threads number if it greater then the total of hosts
 	if opts.totalhosts < opts.threads:
 		opts.threads = opts.totalhosts
@@ -187,6 +196,7 @@ def multiTarget(opts):
 	opts.tcounter = 0
 	opts.cun = 0
 	opts.hostname = ''
+
 
 	op_hostlist = open(opts.hostfile, 'r')
 
@@ -271,8 +281,8 @@ class SshExec(Thread):
                         	myfile.close()
 
 
-		platcheck = platform(opts)
-		self.Cmd = platcheck + self.Cmd
+		# Put the pre check platform at the top of the command
+		#self.Cmd = opts.platcheck + self.Cmd
 
 
 		try:
@@ -294,6 +304,10 @@ class SshExec(Thread):
 				print >> op_outfile, data.strip()
 				op_outfile.close()
 
+       				self.channel.execute('uname -a')
+				print '_+_+_+_+_+'
+				print self.channel.read(4096)
+
 		try:
 			# Close the channel
 	        	self.channel.close()
@@ -307,7 +321,8 @@ class SshExec(Thread):
 # Setup the parser
 usage = "%prog [HOST] [COMMAND] [OPTIONAL]..."
 
-description = 'Example: %prog -t Myhost -t Otherhost -c "uname -a" -T 20'
+description = '''Example: %prog -t Myhost -t Otherhost -c "uname -a" -T 20	
+Example: %prog -H host.lst -S script.sh -w 5 -O results.log'''
 
 version = '1.0'
 
@@ -367,18 +382,22 @@ group2.add_option("-u",
         help="Username to connect with (default: %default)")
 
 group3 = OptionGroup(parser, "Platforms")
+group3.add_option("-N",
+	action='store_false',
+	default=True,
+	dest='linux',
+        help='Dont Execute commands on Linux (default: False)')
 group3.add_option("-L",
         metavar="<VERSION>",
 	dest="linuxver",
         action="append",
-        default='all',
-        choices=['4', '5', '6', 'none', 'all'],
-        help="RHEL version to execute commands on (default: %default)")
+        choices=['4', '5', '6'],
+        help="RHEL version to execute commands on (default: ALL)")
 group3.add_option("-X",
 	action='store_true',
 	default=False,
-	dest='nohpux',
-        help='Dont execute commands on HPUX (default: %default)')
+	dest='hpux',
+        help='Execute commands on HPUX (default: %default)')
 
 group4 = OptionGroup(parser, "Files")
 group4.add_option("-O",
@@ -419,6 +438,8 @@ starttime = time()
 (opts, args) = parser.parse_args()
 
 print opts.linuxver
+print opts.linux
+print opts.hpux
 
 Kinterrupt=False
 
