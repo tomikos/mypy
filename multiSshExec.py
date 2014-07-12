@@ -29,6 +29,36 @@ def myprint(msg):
 	if opts.verbose:
 		print msg
 
+# Print to log
+def printlog(host, msg):
+
+	if opts.verboselog:
+		with open(opts.outfile, 'a') as Outfile:
+			Outfile.write('%s:\n' % host)
+			Outfile.write(str(msg) + "\n")
+			Outfile.write('------------------------' + "\n")
+	else:
+		with open(opts.outfile, 'a') as Outfile:
+			Outfile.write(str(msg) + "\n")
+
+# Print to error log
+def printerrlog(host, msg):
+
+	with open(opts.errfile, 'a') as Errfile:
+		Errfile.write('%s:\n' % host)
+		Errfile.write(str(msg) + "\n")
+		Errfile.write('------------------------' + "\n")
+
+# Remove empty logs
+def removelog():
+        logfiles = [opts.outfile, opts.errfile]
+        for log in logfiles:
+		try:
+                	size = os.path.getsize(log)
+                	if size == 0:
+				os.remove(log)
+        	except Exception, e:
+			continue
 # Remove empty logs
 def removelog():
         logfiles = [opts.outfile, opts.errfile]
@@ -50,6 +80,7 @@ def checkfile(file, oper):
 
         try:
                 op_file = open(file, oper)
+                #op_file.close()
 
         except IOError:
                 myprint('\n%s: Unable to %s file \'%s\'\n' % (argv[0], msg, file))
@@ -235,84 +266,69 @@ class SshExec(Thread):
 		self.Target = opts.target
 		self.Cmd = opts.cmd
 		self.Script = opts.script
-		self.Errfile = opts.errfile
-		self.Outfile = opts.outfile
 		self.User = opts.user
 		self.Timeout = opts.timeout
 		self.Port = opts.port
 		self.Key = opts.key
 		self.Pkey = opts.pkey
 		self.Totalhosts = opts.totalhosts
-		self.Cun = opts.cun
 		self.session = libssh2.Session()
 
-		try:
-			# Prepare socket connection with libssh2
-			sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-			sock.setblocking(1)
-			sock.settimeout(self.Timeout)
-			sock.connect((self.Hostname, self.Port))
-			self.session.startup(sock)
-			sleep(0.2)
-			self.session.userauth_publickey_fromfile(self.User, self.Pkey, self.Key, '')
-	        	self.channel = self.session.open_session()
-
-		except Exception, e:
-			myprint("- Failed!")
-
-			Msg = "%s: %s" % (self.Hostname, e)
-
-			# Write errors into errfile
-			op_errfile = open(self.Errfile, 'a')
-			print >> op_errfile, Msg
-			op_errfile.close()
-
-			raise Exception
+		# Prepare socket connection with libssh2
+		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		self.sock.setblocking(1)
+		self.sock.settimeout(self.Timeout)
 
 	# Run the execution!
 	def run(self):
+		try:
+			#def connect(self):
+			self.sock.connect((self.Hostname, self.Port))
+			self.session.startup(self.sock)
+			sleep(0.2)
+			self.session.userauth_publickey_fromfile(self.User, self.Pkey, self.Key, '')
+	  		self.channel = self.session.open_session()
+
+
+		except Exception, e:
+			myprint("- Failed!")
+			printerrlog(self.Hostname, e)
+
+			raise Exception
+
 
 		# If using script
                 if not self.Cmd:
                         # Load local script into variable
-			checkfile(self.Script, 'r')
                         with open(self.Script, "r") as myfile:
                                 self.Cmd=myfile.read()
-                        	myfile.close()
 
 
 		# Put the pre check platform at the top of the command
 		#self.Cmd = opts.platcheck + self.Cmd
 
-
-		try:
-			# Excute command on the remote host
-        		self.channel.execute(self.Cmd)
-
-			myprint("- Sucsess!")
-
-		except Exception, e:
-			myprint('%s: %s' % (self.Hostname, e))
+		# Excute command on the remote host
+       		self.channel.execute(self.Cmd)
 
 		while True:
 			data = self.channel.read(4096)
 			if data == '' or data is None:
 				break
 			else:
-				# Write result into outfile
-				op_outfile = open(self.Outfile, 'a')
-				print >> op_outfile, data.strip()
-				op_outfile.close()
+				printlog(self.Hostname, data.strip())
 
-       				self.channel.execute('uname -a')
-				print '_+_+_+_+_+'
-				print self.channel.read(4096)
+		#print self.channel.wait_closed()
+       		#print self.channel.exit_status()
+		#print self.channel.eof()
 
 		try:
 			# Close the channel
 	        	self.channel.close()
+			myprint("- Sucsess!")
+
 		except Exception, e:
-			myprint('%s: %s' % (self.Hostname, e))
+			myprint("- Sucsess with error! ")
+			printerrlog(self.Hostname, e)
 
 	def __del__(self):
 		# Close the connection
@@ -332,6 +348,11 @@ parser.add_option("-v", "--verbose",
 	default=True,
 	dest='verbose',
         help='Verbose output (default: %default)')
+parser.add_option("-l", "--verlog",
+        action='store_true',
+	default=False,
+	dest='verboselog',
+        help='Verbose log (default: %default)')
 parser.add_option("-q", "--quiet",
         action='store_true',
 	default=False,
@@ -437,13 +458,8 @@ starttime = time()
 # Grab the command line options
 (opts, args) = parser.parse_args()
 
-print opts.linuxver
-print opts.linux
-print opts.hpux
 
 Kinterrupt=False
-
-######### Calling Function Section ##########
 
 ############ Pre Checking Section ############
 # Check for required options
@@ -456,6 +472,8 @@ if (not opts.cmd and not opts.script):
 	parser.error("Missing command or script")
 elif (opts.cmd and opts.script):
 	parser.error("Only command or script can be handle")
+elif (opts.script and not opts.cmd):
+	checkfile(opt.script, 'r')
 
 # Check for required options -t / -H
 if (not opts.target and not opts.hostfile):	
