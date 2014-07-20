@@ -131,7 +131,10 @@ def platform(opts):
 		palatcheck='''#!/bin/bash
 		KIND=`uname`
 		if [ "$KIND" != 'Linux' ]; then exit 5; fi
-		if [ ! -s "/etc/redhat-release" ]; then  exit 5; fi
+		if [ ! -s "/etc/redhat-release" ]; then
+			echo "/etc/redhat-release file not found" 2>&1
+			exit 10
+		fi
 		linuxver=$(echo %s | tr -dc "[:digit:]" | sed 's/./& /g')
 		VER=`cat /etc/redhat-release | grep -o '[0-9]' | head -1 2>/dev/null`
 		if ! $(echo "$linuxver" | grep "$VER" >/dev/null 2>&1) ; then exit 5; fi
@@ -145,11 +148,13 @@ def platform(opts):
 		KIND=`uname`
 		if [ "$KIND" != 'Linux' -a "$KIND" != 'HP-UX' ]; then exit 5; fi
 		if [ "$KIND" = 'HP-UX' ]; then exit 0; fi
-		if [ "$KIND" = 'Linux' ]; then
-			if [ ! -s "/etc/redhat-release" ]; then  exit 5; fi
-			linuxver=$(echo %s | tr -dc "[:digit:]" | sed 's/./& /g')
-			VER=`cat /etc/redhat-release | grep -o '[0-9]' | head -1 2>/dev/null`
-			if ! $(echo "$linuxver" | grep "$VER" >/dev/null 2>&1) ; then exit 5; fi
+		if [ ! -s "/etc/redhat-release" ]; then
+			echo "/etc/redhat-release file not found" 2>&1
+			exit 10
+		fi
+		linuxver=$(echo %s | tr -dc "[:digit:]" | sed 's/./& /g')
+		VER=`cat /etc/redhat-release | grep -o '[0-9]' | head -1 2>/dev/null`
+		if ! $(echo "$linuxver" | grep "$VER" >/dev/null 2>&1) ; then exit 5; fi
 		fi
 		exit 0
 		''' % opts.linuxver
@@ -371,14 +376,14 @@ class SshExec(threading.Thread):
 			self.conn()
 			(data, exitcode, dataerr) = self.executer(self.Platcheck)
 
-       			if (exitcode != 0) and (dataerr):
-				myprint("[%s/%s %s" % (Count(), self.screen, '- Cannot determine platform!'))
-				printerrlog(self.Hostname, 'Cannot determine platform: %s' % str(dataerr).strip())
-				exit(0)
-
-			elif (exitcode != 0):
+			if (exitcode == 5):
 				myprint("[%s/%s %s" % (Count(), self.screen, '- Platform not supported!'))
 				printerrlog(self.Hostname, 'Platform not supported!')
+				exit(0)
+				
+       			else:
+				myprint("[%s/%s %s" % (Count(), self.screen, '- Cannot determine platform!'))
+				printerrlog(self.Hostname, 'Cannot determine platform: %s' % str(dataerr).strip())
 				exit(0)
 
 		# Call the execution
