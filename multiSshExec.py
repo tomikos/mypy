@@ -391,7 +391,7 @@ class SshExec(threading.Thread):
 		(data, exitcode, dataerr) = self.executer(self.Cmd)
 		
        		if exitcode != 0:
-			myprint("[%s/%s %s" % (Count(), self.screen, '- Sucsess with error!'))
+			myprint("[%s/%s %s" % (Count(), self.screen, '- Executed with error!'))
 			printerrlog(self.Hostname, str(data).strip())
 			printerrlog(self.Hostname, str(dataerr).strip())
 		else:
