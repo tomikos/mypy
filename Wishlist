@@ -1,0 +1,22 @@
+Todo:
+
+1) Display report before start
+
+2) Set minimum and maximum wait time for response
+
+3) Set maximum threads number
+
+4) Check the content of given hostlist
+
+5) Support '#' on hostlist
+
+
+Nearby future:
+
+6) Support multi file transfer
+
+7) Create Wiki/Docs/manpage
+
+8) Create daemon to performe scheduled tasks
+
+9) Support pre configuration (xml?)
