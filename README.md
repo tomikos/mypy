@@ -8,7 +8,7 @@ particularly for deployment and system administration tasks.
 Version
 -------------
 1.0 release, Jun 2014                                                                                                       
-2.0.* release, Jul 2014
+2.0.x release, Jul 2014
 
 Requirements
 -------------
