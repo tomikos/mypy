@@ -1,4 +1,4 @@
-multiexec.py 2.0
+multiexec.py 2.0.2
 
 Description
 -------------
@@ -8,7 +8,7 @@ particularly for deployment and system administration tasks.
 Version
 -------------
 1.0 release, Jun 2014                                                                                                       
-2.0 release, Jul 2014
+2.0.* release, Jul 2014
 
 Requirements
 -------------
