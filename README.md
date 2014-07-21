@@ -1,8 +1,8 @@
-multiSshExec.py 2.0
+multiexec.py 2.0
 
 Description
 -------------
-multiSshExec uses pylibssh2 to implement a higher-level API for performing commands over SSH,                                
+multiexec uses pylibssh2 to implement a higher-level API for performing commands over SSH,                                
 particularly for deployment and system administration tasks.
 
 Version
