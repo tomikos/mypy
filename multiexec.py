@@ -24,7 +24,7 @@ except ImportError:
 # Print total running duration
 def totaltime():
 	totaltime = int(time() - starttime)
-	myprint('\n[+] Done - Total duration time: %s seconds\n' % totaltime)
+	myprint('[+] Done - Total duration time: %s seconds\n' % totaltime)
 
 # Count connections
 def Count():
@@ -65,16 +65,40 @@ def printerrlog(host, data):
 		Errfile.write(host + ': ' + str(data) + "\n")
 		Errfile.write('------------------------' + "\n")
 
+# Print report
+def printreport(opts):
+
+	os.system('clear')
+
+	# print the report
+	myprint("- - - - - - - - - - - - - - - - - - - - - -" )
+	myprint("# Report:")
+	myprint("#   Number of hosts: %s" % opts.totalhosts)
+	myprint("#   Threads number: %s" % opts.threads)
+	myprint("#   Platform: %s" % opts.platcho)
+	myprint("- - - - - - - - - - - - - - - - - - - - - -\n" )
+
+	if opts.verbose:
+		sleep(5)
+
 # Remove empty logs
 def removelog():
+	myprint("\n--------------------------------------------")
         logfiles = [opts.outfile, opts.errfile]
         for log in logfiles:
 		try:
                 	size = os.path.getsize(log)
                 	if size == 0:
 				os.remove(log)
+
+			else:
+				if (log is opts.outfile):
+					myprint("[+] Output log: %s" % opts.outfile)
+				elif (log is opts.errfile):
+					myprint("[+] Error log: %s" % opts.errfile)
         	except Exception, e:
 			continue
+	myprint("")
 
 # Check if can read/write to needed files
 def checkfile(file, oper, act):
@@ -127,6 +151,7 @@ def platform(opts):
 
 	# Check if default has changed
 	if (opts.linux) and (opts.hpux) and (opts.linuxver is None):
+		opts.platcho = 'ALL'
 		return False
 
 	# 'No Linux' is stronger than 'linux versions'
@@ -135,6 +160,7 @@ def platform(opts):
 
 	# Only versions of Linux
 	if (opts.linuxver) and (not opts.hpux):
+		opts.platcho = 'RHEL %s' % (' '.join(opts.linuxver))
 		palatcheck='''#!/bin/bash
 		KIND=`uname`
 		if [ "$KIND" != 'Linux' ]; then exit 5; fi
@@ -151,6 +177,7 @@ def platform(opts):
 
 	# Versions of Linux and HPUX
 	if (opts.linuxver) and (opts.hpux):
+		opts.platcho = 'RHEL %s And HPUX' % (' '.join(opts.linuxver))
 		palatcheck='''#!/bin/bash
 		KIND=`uname`
 		if [ "$KIND" != 'Linux' -a "$KIND" != 'HP-UX' ]; then exit 5; fi
@@ -168,6 +195,7 @@ def platform(opts):
 
 	# No Linux and no HPUX
 	if (not opts.linux) and (not opts.hpux):
+		opts.platcho = 'All platform except Linux and HPUX'
 		palatcheck='''#!/bin/bash
 		KIND=`uname`
 		if [ "$KIND" = 'Linux' -o "$KIND" = 'HP-UX' ]; then exit 5; fi
@@ -177,6 +205,7 @@ def platform(opts):
 
 	# Only HPUX 
 	if (not opts.linux) and (opts.hpux):
+		opts.platcho = 'Only HPUX'
 		palatcheck='''#!/bin/bash
 		KIND=`uname`
 		if [ "$KIND" != 'HP-UX' ]; then exit 5; fi
@@ -186,6 +215,7 @@ def platform(opts):
 	
 	# Only all Linux
 	if (opts.linux) and (not opts.hpux) and (opts.linuxver is None):
+		opts.platcho = 'Only Linux'
 		palatcheck='''#!/bin/bash
 		KIND=`uname`
 		if [ "$KIND" != 'Linux' ]; then exit 5; fi
@@ -195,6 +225,7 @@ def platform(opts):
 
 	# All Linux and HPUX
 	if (opts.linux) and (opts.hpux) and (opts.linuxver is None):
+		opts.platcho = 'Linux and HPUX'
 		palatcheck='''#!/bin/bash
 		KIND=`uname`
 		if [ "$KIND" != 'Linux' -a "$KIND" != 'HP-UX' ]; then exit 5; fi
@@ -223,6 +254,9 @@ def singelTarget(opts):
 
 	# Determine chosen platform
 	opts.platcheck = platform(opts)
+
+	# Print report
+	printreport(opts)
 
 	# Run on every host in target option
 	for opts.hostname in opts.target:
@@ -273,6 +307,9 @@ def multiTarget(opts):
 	# Redefine threads number if it gt the number of total hosts
 	if opts.totalhosts < opts.threads:
 		opts.threads = opts.totalhosts
+
+	# Print report
+	printreport(opts)
 
 	# Reset needed variables
 	results = []
@@ -404,7 +441,7 @@ class SshExec(threading.Thread):
 		(data, exitcode, dataerr) = self.executer(self.Cmd)
 		
        		if exitcode != 0:
-			myprint("[%s/%s %s" % (Count(), self.screen, '- Executed with error!'))
+			myprint("[%s/%s %s" % (Count(), self.screen, '- Execution return error!'))
 			printerrlog(self.Hostname, str(data).strip())
 			printerrlog(self.Hostname, str(dataerr).strip())
 		else:
