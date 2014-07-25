@@ -7,10 +7,12 @@ Todo:
 
 Nearby future:
 
-6) Support multi file transfer
+3) Support multi file transfer
 
-7) Create Wiki/Docs/manpage
+4) Create Wiki/Docs/manpage
 
-8) Create daemon to performe scheduled tasks
+5) Create daemon to performe scheduled tasks
 
-9) Support pre configuration for automation (xml?)
+6) Support pre configuration for automation (xml?)
+
+7) Tui / Gui / Webui
