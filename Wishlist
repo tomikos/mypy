@@ -1,14 +1,8 @@
 Todo:
 
-1) Display report before start
+1) Check the content of given hostlist
 
-2) Set minimum and maximum wait time for response
-
-3) Set maximum threads number
-
-4) Check the content of given hostlist
-
-5) Support '#' on hostlist
+2) Support '#' on hostlist
 
 
 Nearby future:
