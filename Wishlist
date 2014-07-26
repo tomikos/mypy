@@ -1,18 +1,14 @@
 Todo:
 
-1) Check the content of given hostlist
-
-2) Support '#' on hostlist
+1) Support multi file transfer
 
 
 Nearby future:
 
-3) Support multi file transfer
+2) Create Wiki/Docs/manpage
 
-4) Create Wiki/Docs/manpage
+3) Create daemon to performe scheduled tasks
 
-5) Create daemon to performe scheduled tasks
+4) Support pre configuration for automation (xml?)
 
-6) Support pre configuration for automation (xml?)
-
-7) Tui / Gui / Webui
+5) Tui / Gui / Webui
