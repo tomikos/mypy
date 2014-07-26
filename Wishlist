@@ -12,3 +12,7 @@ Nearby future:
 4) Support pre configuration for automation (xml?)
 
 5) Tui / Gui / Webui
+
+6) Create rpm and split the program into functions file
+
+7) Encode the source code (Binary)
