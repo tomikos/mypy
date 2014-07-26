@@ -30,7 +30,7 @@ if libssh2.version.__version__ != '1.0.3':
 # Print total running duration
 def totaltime():
 	totaltime = int(time() - starttime)
-	myprint('[+] Done - Total duration time: %s seconds\n' % totaltime)
+	myprint('[+] Total duration time: %s seconds\n' % totaltime)
 
 # Count connections
 def Count():
@@ -98,7 +98,7 @@ def printreport(opts):
 def removelog(finish):
 
 	if finish:
-		myprint("\n--------------------------------------------")
+		myprint("\n------------------------------------------")
 
         logfiles = [opts.outfile, opts.errfile]
         for log in logfiles:
@@ -541,7 +541,7 @@ group1.add_option("-c",
 	dest="cmd",
 	type='string',
         help="Single command to execute on remote host")
-group1.add_option("-S",
+group1.add_option("-s",
         metavar="<SCRIPT>",
 	dest="script",
 	type='string',
