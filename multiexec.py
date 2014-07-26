@@ -4,11 +4,10 @@
 #  Developer: Tomer Iluz  #
 ###########################
 
-import os, socket, subprocess
+from optparse import Option, OptionParser, OptionGroup
+import os, socket, subprocess, threading
 from sys import argv
 from time import sleep, time
-import threading
-from optparse import Option, OptionParser, OptionGroup
 from re import match
 
 Prog = argv[0].split('/')[-1]
@@ -20,7 +19,7 @@ except ImportError:
 	print '\t      https://github.com/wallix/pylibssh2\n'
 	exit(1)
 
-if libssh2.version.__version__ != '1.0.3':
+if (libssh2.version.__version__) != '1.0.3':
 	print '\n%s: Please install Pylibssh2-1.0.3 module:' % Prog
 	print '\t      https://github.com/wallix/pylibssh2\n'
 	exit(1)
@@ -49,18 +48,24 @@ def myprint(msg):
 # Print to log
 def printlog(host, data):
 
-	if (data == '') or (data == 'None') or (data is None):
-		return
+	#f (data == '') or (data == 'None') or (data is None):
+		#return
 
 	if opts.verboselog:
 		with open(opts.outfile, 'a') as Outfile:
-			Outfile.write('%s - Sucsess:\n' % host)
-			Outfile.write(str(data) + "\n")
+			Outfile.write('%s - Sucsess\n' % host)
+
+			if (data != 'None') and (data != '') and not (data is None):
+				Outfile.write(str(data) + "\n")
 			Outfile.write('------------------------' + "\n")
 	else:
-		with open(opts.outfile, 'a') as Outfile:
-			Outfile.write(str(data) + "\n")
-
+		if (data != 'None') and (data != '') and not (data is None):
+			with open(opts.outfile, 'a') as Outfile:
+				Outfile.write(str(data) + "\n")
+		else:
+			with open(opts.outfile, 'a') as Outfile:
+				Outfile.write('%s - Sucsess\n' % host)
+			
 # Print to error log
 def printerrlog(section, data):
 
@@ -121,10 +126,8 @@ def removelog(finish):
 # Check if can read/write to needed files
 def checkfile(file, oper, act):
 
-        if oper == 'r':
-                msg = 'read'
-        elif oper == 'w':
-                msg = 'write to'
+        if oper == 'r': msg = 'read'
+        elif oper == 'w': msg = 'write to'
 
         try:
 		with open(file, oper) as op_file:
@@ -422,7 +425,6 @@ class SshExec(threading.Thread):
   			self.channel = self.session.open_session()
 			
 		except Exception, e:
-			sleep(0.5)
 			myprint("[%s/%s %s" % (Count(), self.out, '- Failed!'))
 			printerrlog(self.Hostname, e)
 			exit(0)
@@ -744,9 +746,9 @@ except KeyboardInterrupt, e:
 
 	# Exit with error
 	exit(10)
-"""
+
 except Exception, e:
 	myprint("\n[!] Unknown error occurred, please try again")
 	printerrlog(Prog, 'Unknown error occurred, please try again')
 	exit(20)
-"""
+
