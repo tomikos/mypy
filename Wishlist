@@ -1,0 +1,18 @@
+Todo:
+
+1) Support multi file transfer
+
+
+Nearby future:
+
+2) Create Wiki/Docs/manpage
+
+3) Create daemon to performe scheduled tasks
+
+4) Support pre configuration for automation (xml?)
+
+5) Tui / Gui / Webui
+
+6) Create rpm and split the program into functions file
+
+7) Encode the source code (Binary)
