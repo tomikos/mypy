@@ -325,9 +325,6 @@ def singelTarget(opts):
 # Using for hostlist file
 def multiTarget(opts):
 
-	# Check hostfile for reading
-	checkfile(opts.hostfile, 'r', 'hard')
-
 	# Determine number of supplied hosts
 	with open(opts.hostfile, 'r') as hfile:
 		opts.thosts = sum(1 for n in hfile if match("^[a-zA-Z0-9]+.*", n))
@@ -659,6 +656,8 @@ if (not opts.target and not opts.hostfile):
 
 elif (opts.target and opts.hostfile):
 	parser.error("Only hostname or hostlist can be handle")
+elif (opts.hostfile and not opts.target):
+	checkfile(opts.hostfile, 'r', 'hard'
 
 # Check for required options -c / -S
 if (not opts.cmd and not opts.script):
