@@ -426,7 +426,7 @@ class SshExec(threading.Thread):
 
 		except Exception, e:
 			myprint("[%s/%s %s" % (Count(), self.out, '- Failed!'))
-			printerrlog(self.Hostname, e)
+			printerrlog(self.Hostname, 'Failed: %s' % str(e))
 			exit(0)
 
 
@@ -445,7 +445,7 @@ class SshExec(threading.Thread):
 			
 		except Exception, e:
 			myprint("[%s/%s %s" % (Count(), self.out, '- Execution failed!'))
-			printerrlog(self.Hostname, e)
+			printerrlog(self.Hostname, 'Execution failed: %s' % str(e))
 			exit(0)
 
 		# Receive stdrr and exit code
@@ -460,7 +460,7 @@ class SshExec(threading.Thread):
 
 		except Exception, e:
 			myprint("[%s/%s %s" % (Count(), self.out, '- Unknown error!'))
-			printerrlog(self.Hostname, e)
+			printerrlog(self.Hostname, 'Unknown error: %s' % str(e))
 			exit(0)
 
 		# Return received stdout, stdrr, code
@@ -468,11 +468,14 @@ class SshExec(threading.Thread):
 
 	# Copy file
 	def scp(self):
-		self.Dest = (self.Dest + '/' + self.File)
+
+		checkfile(self.onefile, 'r', 'hard')
 
         	datas=""
 
-        	f=file(self.File, "rb")
+		Tpath = (self.Dest + '/' + self.onefile)
+
+        	f=file(self.onefile, "rb")
         	while True:
             		data = f.readline()
             		if  len(data) == 0:
@@ -483,25 +486,28 @@ class SshExec(threading.Thread):
         	file_size = len(datas)
 
 		try:
-			self.channel = self.session.scp_send(self.Dest, self.Mode, file_size)
+			self.channel = self.session.scp_send(Tpath, self.Mode, file_size)
         		self.channel.write(datas)
 		except Exception, e:
-			print 'error number 1'
+			myprint("[%s/%s %s" % (Count(), self.out, '- Copy has failed!'))
+			printerrlog(self.Hostname, 'Copy has failed: %s' % str(e))
 			exit(0)
 
 		try:
-			f.close #
+			f.close
 			self.channel.wait_closed()
 			self.session.close()
 			self.sock.close()
 
 		except Exception, e:
-			print 'error number 2'
+			myprint("[%s/%s %s" % (Count(), self.out, '- Copyed with erorr!'))
+			printerrlog(self.Hostname, 'Copyed with erorr: %s' % str(e))
 			exit(0)
 
 	# Start running!
 	def run(self):
 
+		# Line to print
 		self.out = str('%s] %s' % (self.Thosts, self.Hostname)).ljust(self.Lenline)
 
 		# Check platform if needed
@@ -519,9 +525,11 @@ class SshExec(threading.Thread):
 				printerrlog(self.Hostname, 'Platform excluded!')
 				exit(0)
 
-		if (opts.file):
-			self.conn()
-			self.scp()
+		# Send files
+		if self.File:
+			for self.onefile in self.File:
+				self.conn()
+				self.scp()
 
 		# Call the execution
 		self.conn()
@@ -592,6 +600,7 @@ group2.add_option("-F",
         metavar="<FILE>",
 	dest="file",
 	type='string',
+	action="append",
         help="Multi files to copy via SCP protocol")
 group2.add_option("-D",
         metavar="<DEST>",
@@ -815,4 +824,3 @@ except Exception, e:
 	myprint("\n[!] Unknown error occurred, please try again")
 	printerrlog(Prog, 'Unknown error occurred, please try again')
 	exit(20)
-
